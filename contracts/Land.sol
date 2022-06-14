@@ -33,7 +33,7 @@ contract Land is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, Own
 
 
     //Mint with ERC-721
-    function safeMintWithcCloud(address to, string memory uri, uint _id) public  {
+    function safeMintWithCloud(address to, string memory uri, uint _id) public  {
         //requirement that the sender have the id passed as a parameter
         require(cloud.ownerOf(_id) == msg.sender, "you must be owner of id");
 
