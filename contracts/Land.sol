@@ -66,7 +66,7 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
     address to,
     uint tokenId
   ) public override(ERC721, IERC721){
-    require(address(marketplace) != address(0),"El address del market no esta seteado");
+    require(address(marketplace) != address(0),"Address of marketplace is not set");
     require(!marketplace.assetIdToOrderOpen(tokenId), "This token is in marketplace");
     require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
 
