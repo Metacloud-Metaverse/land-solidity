@@ -16,23 +16,21 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
 
   
   struct LandMetadata{
-    uint coordinatesX;
-    uint coordinatesY;
+    uint256 coordinatesX;
+    uint256 coordinatesY;
   }
 
 
 
 
-  mapping(uint => LandMetadata) public index;
+  mapping(uint256 => LandMetadata) public index;
   IMarketplace public marketplace;
-  uint public maxSupply;
+  uint256 public maxSupply;
 
 
 
 
-  constructor(uint _maxSupply, address _marketplace) ERC721("Land","LAND"){
-    maxSupply = _maxSupply;
-    marketplace = IMarketplace(_marketplace);
+  constructor(uint256 _maxSupply, address _marketplace) ERC721("Land","LAND"){
   }
 
 
@@ -40,13 +38,14 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
 
   function safeMint(
     address to, 
-    uint _coordinatesX,
-    uint _coordinatesY
+    uint256 _coordinatesX,
+    uint256 _coordinatesY
     ) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();        
-        _tokenIdCounter.increment();
-        index[tokenId].coordinatesX = _coordinatesX;
-        index[tokenId].coordinatesY = _coordinatesY;
+        index[tokenId] = LandMetadata({
+            coordinatesX: _coordinatesX,
+            coordinatesY: _coordinatesY
+        });
 
         _safeMint(to, tokenId);
   }
@@ -64,7 +63,7 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
   function transferFrom(
     address from,
     address to,
-    uint tokenId
+    uint256 tokenId
   ) public override(ERC721, IERC721){
     require(address(marketplace) != address(0),"Address of marketplace is not set");
     require(!marketplace.assetIdToOrderOpen(tokenId), "This token is in marketplace");
