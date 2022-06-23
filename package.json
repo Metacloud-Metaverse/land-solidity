@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.6.0",
+    "hardhat-deploy": "^0.11.10",
     "eslint": "^8.17.0",
     "o": "^2.3.2",
     "prettier": "^2.7.0"
