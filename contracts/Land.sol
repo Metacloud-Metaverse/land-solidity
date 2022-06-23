@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "../interfaces/IMarketplace.sol"; 
 
 
-contract Land is ERC721, ERC721Enumerable, Ownable { 
+contract Land is ERC721Enumerable, Ownable { 
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIdCounter;
 
@@ -30,7 +30,7 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
 
 
 
-  constructor(uint256 _maxSupply, address _marketplace) ERC721("Land","LAND"){
+  constructor() ERC721("Land","LAND"){
   }
 
 
@@ -79,7 +79,7 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
   // The following functions are overrides required by Solidity.
   function _beforeTokenTransfer(address from, address to, uint256 tokenId)
       internal
-      override(ERC721, ERC721Enumerable)
+      override(ERC721Enumerable)
   {
       super._beforeTokenTransfer(from, to, tokenId);
   }
@@ -90,7 +90,7 @@ contract Land is ERC721, ERC721Enumerable, Ownable {
   function supportsInterface(bytes4 interfaceId)
       public
       view
-      override(ERC721, ERC721Enumerable)
+      override(ERC721Enumerable)
       returns (bool)
   {
       return super.supportsInterface(interfaceId);
