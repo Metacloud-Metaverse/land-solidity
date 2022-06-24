@@ -10,9 +10,6 @@ const initialSetup = deployments.createFixture(
         const TestMarketplace = await ethers.getContractFactory("TestMarketplace");
         const landContract = await Land.deploy();
         const marketplace = await TestMarketplace.deploy();
-        // Mint some Lands (they need approval)
-        await landContract.safeMint(user1.address, 1, 1);
-        await landContract.safeMint(user1.address, 3, 3);
         return { contracts: { marketplace, landContract }};
     }
 );
