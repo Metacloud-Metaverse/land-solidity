@@ -1,120 +1,80 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./interfaces/IMarketplace.sol";
 
-contract LAND is
-    ERC721,
-    ERC721Enumerable,
-    ERC721URIStorage,
-    ERC721Burnable,
-    Ownable
-{
+
+contract Land is ERC721, ERC721Enumerable, Ownable { 
+    using Address for address;
     using Counters for Counters.Counter;
-
-    IERC20 public cloud;
-    address public house;
-
-    uint256 public cloudPrice;
-    uint256 public bnbPrice;
 
     Counters.Counter private _tokenIdCounter;
 
-    constructor(
-        IERC20 _cloud,
-        address _house,
-        uint256 _cloudPrice,
-        uint256 _bnbPrice
-    ) ERC721("Land", "LAND") {
-        cloud = _cloud;
-        house = _house;
-        cloudPrice = _cloudPrice;
-        bnbPrice = _bnbPrice;
+    struct LandMetadata{
+        uint256 coordinatesX;
+        uint256 coordinatesY;
     }
 
-    //Mint reserved for the owner
-    function safeMint(address to, string memory uri) public onlyOwner {
+    mapping(uint256 => LandMetadata) public landIndexToMetadata;
+    IMarketplace public marketplace;
+    uint256 public immutable maxSupply = 10000;
+
+    constructor() ERC721("Land","LAND") {}
+
+    function safeMint(
+        address _to, 
+        uint256 _coordinatesX,
+        uint256 _coordinatesY
+    ) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
+        require(tokenId < maxSupply, "ERC721: minting would exceed total supply");
         _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
+        // Save Land metadata
+        landIndexToMetadata[tokenId] = LandMetadata({
+            coordinatesX: _coordinatesX,
+            coordinatesY: _coordinatesY
+        });
+        _safeMint(_to, tokenId);
     }
 
-    //  Mint with ERC-20 (CLOUD TOKEN)
-    function safeMintWithCloud(address to, string memory uri) public {
-        // Requirement: the user have the token CLOUD
-        require(
-            cloud.balanceOf(msg.sender) >= cloudPrice,
-            "You dont have balance"
-        );
-
-        // Transfer the cloud token to where it is required. For example: project address 'Metacloud' so that the Land ID can be automatically generated for the user who bought it.
-        require(cloud.transferFrom(msg.sender, house, cloudPrice));
-
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
+    function setMarketAddress(address _marketplace) public onlyOwner {
+        require(_marketplace != address(0), "Marketplace address cannot be 0");
+        require(_marketplace.isContract(), "Marketplace address must be a deployed contract");
+        marketplace = IMarketplace(_marketplace);
     }
 
-    // Mint with BNB
-    function safeMintWithBNB(address to, string memory uri) public payable {
-        require(msg.value >= bnbPrice, "You dont have balance");
-        payable(address(house)).transfer(msg.value);
-
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
-    }
-
-    function setCloud(IERC20 _cloud) public {
-        cloud = _cloud;
-    }
-
-    function sethouse(address _house) public {
-        house = _house;
-    }
-
-    function setCloudPrice(uint256 _cloudPrice) public {
-        cloudPrice = _cloudPrice;
-    }
-
-    function setBnbPrice(uint256 _bnbPrice) public {
-        bnbPrice = _bnbPrice;
-    }
-
-    // The following functions are overrides required by Solidity.
-
-    function _beforeTokenTransfer(
+    function transferFrom(
         address from,
         address to,
         uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
+    ) public override(ERC721, IERC721){
+        require(address(marketplace) != address(0), "Marketplace address is not set");
+        require(!marketplace.assetIdToOrderOpen(tokenId), "Land: there is an open order in the marketplace");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+
+        super._transfer(from, to, tokenId);
     }
 
-    function _burn(uint256 tokenId)
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory
+    ) public virtual override(ERC721, IERC721) {
+        transferFrom(from, to, tokenId);
+    }
+
+    // The following functions are overrides required by Solidity.
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
-        override(ERC721, ERC721URIStorage)
+        override(ERC721, ERC721Enumerable)
     {
-        super._burn(tokenId);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
+        super._beforeTokenTransfer(from, to, tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)
